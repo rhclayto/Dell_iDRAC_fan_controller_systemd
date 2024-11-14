@@ -8,6 +8,7 @@ I modified this from tigerblue77's cool Docker container to work with systemd in
 <details>
   <summary>Table of Contents</summary>
   <ol>
+    <li><a href="#prerequisites">Prerequisites</a></li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#parameters">Parameters</a></li>
     <li><a href="#troubleshooting">Troubleshooting</a></li>
