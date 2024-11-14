@@ -2,17 +2,12 @@
 
 > **Warning** If you update to the latest version, be sure to replace "CPU_TEMPERATURE_TRESHOLD" environment variable with "CPU_TEMPERATURE_T<ins>H</ins>RESHOLD" which was a typo
 
-# Dell iDRAC fan controller Docker image
-Download Docker image from :
-- [Docker Hub](https://hub.docker.com/r/tigerblue77/dell_idrac_fan_controller)
-- [GitHub Containers Repository](https://github.com/tigerblue77/Dell_iDRAC_fan_controller_Docker/pkgs/container/dell_idrac_fan_controller)
+I modified this from tigerblue77's cool Docker container to work with systemd instead, on bare-metal or VM, whatever.
 
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#container-console-log-example">Container console log example</a></li>
-    <li><a href="#supported-architectures">Supported architectures</a></li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#parameters">Parameters</a></li>
     <li><a href="#troubleshooting">Troubleshooting</a></li>
@@ -20,17 +15,11 @@ Download Docker image from :
   </ol>
 </details>
 
-## Container console log example
-
-![image](https://user-images.githubusercontent.com/37409593/216442212-d2ad7ff7-0d6f-443f-b8ac-c67b5f613b83.png)
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
 <!-- PREREQUISITES -->
 ## Prerequisites
 ### iDRAC version
 
-This Docker container only works on Dell PowerEdge servers that support IPMI commands, i.e. < iDRAC 9 firmware 3.30.30.30.
+This thingamabob only works on Dell PowerEdge servers that support IPMI commands, i.e. < iDRAC 9 firmware 3.30.30.30.
 
 ### To access iDRAC over LAN (not needed in "local" mode) :
 
@@ -58,94 +47,14 @@ ipmitool -I lanplus \
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-<!-- SUPPORTED ARCHITECTURES -->
-## Supported architectures
-
-This Docker container is currently built and available for the following CPU architectures :
-- AMD64
-- ARM64
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
 <!-- USAGE -->
 ## Usage
 
-1. with local iDRAC:
-
-```bash
-docker run -d \
-  --name Dell_iDRAC_fan_controller \
-  --restart=unless-stopped \
-  -e IDRAC_HOST=local \
-  -e FAN_SPEED=<decimal or hexadecimal fan speed> \
-  -e CPU_TEMPERATURE_THRESHOLD=<decimal temperature threshold> \
-  -e CHECK_INTERVAL=<seconds between each check> \
-  -e DISABLE_THIRD_PARTY_PCIE_CARD_DELL_DEFAULT_COOLING_RESPONSE=<true or false> \
-  -e KEEP_THIRD_PARTY_PCIE_CARD_COOLING_RESPONSE_STATE_ON_EXIT=<true or false> \
-  --device=/dev/ipmi0:/dev/ipmi0:rw \
-  tigerblue77/dell_idrac_fan_controller:latest
-```
-
-2. with LAN iDRAC:
-
-```bash
-docker run -d \
-  --name Dell_iDRAC_fan_controller \
-  --restart=unless-stopped \
-  -e IDRAC_HOST=<iDRAC IP address> \
-  -e IDRAC_USERNAME=<iDRAC username> \
-  -e IDRAC_PASSWORD=<iDRAC password> \
-  -e FAN_SPEED=<decimal or hexadecimal fan speed> \
-  -e CPU_TEMPERATURE_THRESHOLD=<decimal temperature threshold> \
-  -e CHECK_INTERVAL=<seconds between each check> \
-  -e DISABLE_THIRD_PARTY_PCIE_CARD_DELL_DEFAULT_COOLING_RESPONSE=<true or false> \
-  -e KEEP_THIRD_PARTY_PCIE_CARD_COOLING_RESPONSE_STATE_ON_EXIT=<true or false> \
-  tigerblue77/dell_idrac_fan_controller:latest
-```
-
-`docker-compose.yml` examples:
-
-1. to use with local iDRAC:
-
-```yml
-version: '3.8'
-
-services:
-  Dell_iDRAC_fan_controller:
-    image: tigerblue77/dell_idrac_fan_controller:latest
-    container_name: Dell_iDRAC_fan_controller
-    restart: unless-stopped
-    environment:
-      - IDRAC_HOST=local
-      - FAN_SPEED=<decimal or hexadecimal fan speed>
-      - CPU_TEMPERATURE_THRESHOLD=<decimal temperature threshold>
-      - CHECK_INTERVAL=<seconds between each check>
-      - DISABLE_THIRD_PARTY_PCIE_CARD_DELL_DEFAULT_COOLING_RESPONSE=<true or false>
-      - KEEP_THIRD_PARTY_PCIE_CARD_COOLING_RESPONSE_STATE_ON_EXIT=<true or false>
-    devices:
-      - /dev/ipmi0:/dev/ipmi0:rw
-```
-
-2. to use with LAN iDRAC:
-
-```yml
-version: '3.8'
-
-services:
-  Dell_iDRAC_fan_controller:
-    image: tigerblue77/dell_idrac_fan_controller:latest
-    container_name: Dell_iDRAC_fan_controller
-    restart: unless-stopped
-    environment:
-      - IDRAC_HOST=<iDRAC IP address>
-      - IDRAC_USERNAME=<iDRAC username>
-      - IDRAC_PASSWORD=<iDRAC password>
-      - FAN_SPEED=<decimal or hexadecimal fan speed>
-      - CPU_TEMPERATURE_THRESHOLD=<decimal temperature threshold>
-      - CHECK_INTERVAL=<seconds between each check>
-      - DISABLE_THIRD_PARTY_PCIE_CARD_DELL_DEFAULT_COOLING_RESPONSE=<true or false>
-      - KEEP_THIRD_PARTY_PCIE_CARD_COOLING_RESPONSE_STATE_ON_EXIT=<true or false>
-```
+1. Place the .sh files in `/opt/iDRAC-Fan-Control`. Be sure to make them executable.
+2. Place the .service file wherever systemd service files go on your system. For instance, on Debian/Ubuntu it's usually `/etc/systemd/system` .
+3. Modify the .service file to work with your setup. The environment variables used to configure the script (see below) are in the .service file. i also have the systemd service locked down with various protections. Modify these if they don't work on your system. For instance, I have `PrivateDevices=true`, then specifically allow access to only the IPMI devices `/dev/ipmi0`. Your IPMI device might be named differently. All of these restriction can be disabled if needed by commenting them out. Also, the .service fill is set up to control fans on the local machine. If you need to control fans on a machine over the network, change the environment variables in the .service file accordingly (see below).
+4. Start the service with `systemctl start idrac-fan-controller.service`.
+5. If all goes well, enable the service with `systemctl enable idrac-fan-controller.service`.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
