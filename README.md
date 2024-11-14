@@ -52,7 +52,7 @@ ipmitool -I lanplus \
 ## Usage
 
 1. Place the .sh files in `/opt/iDRAC-Fan-Control`. Be sure to make them executable.
-2. Place the .service file wherever systemd service files go on your system. For instance, on Debian/Ubuntu it's usually `/etc/systemd/system` .
+2. Place the .service file wherever systemd service files go on your system. For instance, on Debian/Ubuntu it's usually `/etc/systemd/system`
 3. Modify the .service file to work with your setup. The environment variables used to configure the script (see below) are in the .service file. I also have the systemd service locked down with various protections. Modify these if they don't work on your system. For instance, I have `PrivateDevices=true`, then specifically allow access to only the IPMI devices `/dev/ipmi0`. Your IPMI device might be named differently. All of these restriction can be disabled if needed by commenting them out. Also, the .service file is set up to control fans on the local machine. If you need to control fans on a machine over the network, change the environment variables in the .service file accordingly (see below).
 4. Start the service with `systemctl start idrac-fan-controller.service`.
 5. If all goes well, enable the service with `systemctl enable idrac-fan-controller.service`.
